@@ -1,26 +1,6 @@
 # Problem Set 02 — Bank Term Deposit Prediction (Logistic Regression)
 
-Binary classification model to predict whether a prospective banking customer will subscribe to a term deposit (`y`: yes/no) based on direct marketing telemarketing campaigns. The project utilizes the **Bank Marketing Dataset** (UCI Machine Learning Repository), containing 45,211 instances and 17 attributes from a Portuguese banking institution.
-
----
-
-## Directory & File Structure
-
-This assignment maintains two distinct directories adhering strictly to the submission guidelines:
-
-```
-NN-Assignment/
-└── ML-Assignment/
-    ├── Problem Set 01/
-    │   ├── README.md
-    │   └── problem_set_1.ipynb
-    └── Problem Set 02/
-        ├── README.md
-        └── problem_set_2.ipynb
-```
-
-- **`problem_set_2.ipynb`**: Complete end-to-end Python code for data loading, encoding, scaling, model fitting, and evaluation with zero unnecessary comments, clean execution logs, and embedded visualization figures.
-- **`README.md`**: In-depth documentation detailing the approach, methodology, empirical findings, and comparative imbalance experimentation.
+Binary classification model to predict whether a prospective banking customer will subscribe to a term deposit (`y`: yes/no) based on direct telemarketing campaigns. The solution is developed using the **Bank Marketing Dataset** (UCI Machine Learning Repository), containing 45,211 instances and 17 attributes from a Portuguese banking institution.
 
 ---
 
@@ -28,7 +8,7 @@ NN-Assignment/
 
 ### Option 1: Google Colab (Recommended)
 1. Open [`problem_set_2.ipynb`](problem_set_2.ipynb) in Google Colab.
-2. Mount Google Drive containing `bank-full.csv` at `/content/drive/MyDrive/ML_Assignment/bank-full.csv` (or modify `data_path` to match your Drive directory).
+2. Mount Google Drive containing `bank-full.csv` at `/content/drive/MyDrive/ML_Assignment/bank-full.csv` (or modify `data_path` to match your Drive storage location).
 3. Execute all cells sequentially. Required libraries (`pandas`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn`, `joblib`) are standard across Colab runtimes.
 
 ### Option 2: Local Python / Jupyter Environment
@@ -39,37 +19,38 @@ jupyter notebook "problem_set_2.ipynb"
 
 Configure `data_path` to point to the local CSV file path (e.g., `./bank-data/bank-full.csv`).
 
-> **Execution Note:** The committed notebook contains actual outputs and visualizations (confusion matrix heatmap and ROC display curves) preserved from execution.
+> **Execution Note:** The notebook is committed with executed outputs and visualizations (confusion matrix heatmap and ROC curves) saved directly in the notebook file.
 
 ---
 
 ## Approach & Methodology
 
-### 1. Exploratory Data Analysis & Quality Assurance
+### 1. Exploratory Data Analysis & Verification
 - **Dataset Dimensions**: 45,211 rows × 17 features (7 numerical, 10 categorical).
 - **Data Integrity**: Verified 0 null or missing values across all columns.
 - **Target Distribution**:
   - Class `no` (non-subscribers): **39,922** (~88.30%)
   - Class `yes` (subscribers): **5,289** (~11.70%)
-  - Confirmed an intrinsic class imbalance of roughly **88:12**, which strongly dictates model behavior and evaluation strategy.
+  - Confirmed an intrinsic class imbalance ratio of approximately **88:12**, which dictates evaluation beyond raw accuracy.
 
-### 2. Feature Preprocessing & One-Hot Encoding
-- **Binary Target Mapping**: Mapped `df['y']` to binary integers (`'yes': 1, 'no': 0`).
-- **Dummy Variable Encoding**: Applied `pd.get_dummies(df, drop_first=True)` to encode nominal categorical features (`job`, `marital`, `education`, `default`, `housing`, `loan`, `contact`, `month`, `poutcome`).
-  - Dropping the reference level (`drop_first=True`) eliminates strict multicollinearity and the dummy variable trap in linear models.
-  - Generates **42 input predictor variables**.
+### 2. Feature Preprocessing & Categorical Encoding
+- **Binary Target Mapping**: Mapped `df['y']` to binary values (`'yes': 1, 'no': 0`).
+- **One-Hot Encoding**: Applied `pd.get_dummies(df, drop_first=True)` to encode nominal categorical features (`job`, `marital`, `education`, `default`, `housing`, `loan`, `contact`, `month`, `poutcome`).
+  - Dropping the reference level (`drop_first=True`) prevents multicollinearity (dummy variable trap) in linear estimators.
+  - Expands the feature space to **42 predictor features**.
 
 ### 3. Stratified Train-Test Partitioning
-- Partitioned dataset into **80% training** (36,168 samples) and **20% testing** (9,043 samples) via `train_test_split`.
-- Employed `stratify=y` with `random_state=42` to guarantee that both training and testing splits mirror the exact 88.3% / 11.7% class proportion, preventing sampling distortion.
+- Partitioned dataset into **80% training** (36,168 samples) and **20% testing** (9,043 samples) using `train_test_split`.
+- Parameter `stratify=y` ensures both train and test splits retain the identical 88.3% / 11.7% class proportion, preventing sampling distortion.
+- Seeded with `random_state=42` for exact reproducibility.
 
-### 4. Feature Scaling (`StandardScaler`)
-- Fitted `StandardScaler` strictly on `X_train` (`fit_transform`) and subsequently transformed `X_test` (`transform`), preventing data leakage.
-- Normalization to zero mean and unit variance ensures numerical stability during optimization and prevents features with wide dynamic ranges (such as `balance` or `duration`) from artificially skewing coefficient gradients.
+### 4. Feature Standardization (`StandardScaler`)
+- Fitted `StandardScaler` strictly on `X_train` (`fit_transform`) and subsequently transformed `X_test` (`transform`), eliminating data leakage.
+- Standardizing to zero mean and unit variance ensures gradient descent stability during optimization and prevents features with wide numerical ranges (e.g., `balance`, `duration`) from artificially skewing coefficient weights.
 
 ### 5. Model Training & Persistence
 - Trained a binary classifier using `LogisticRegression(max_iter=1000)`.
-- Set `max_iter=1000` to ensure L-BFGS solver convergence without early termination warnings.
+- Set `max_iter=1000` to guarantee solver convergence without early termination warnings.
 - Serialized the trained estimator using `joblib.dump(model, 'bank_logistic_model.pkl')` for deployment readiness.
 
 ---
@@ -101,7 +82,7 @@ The baseline submission employs the default classification threshold (0.50) with
 
 ### Interpretation & Critical Analysis
 - **Strong Discriminative Capacity**: The model achieves an ROC-AUC of **0.91**, proving that the logistic sigmoid function cleanly differentiates prospective subscribers from non-subscribers across continuous probability estimates.
-- **The Imbalance Caveat**: While an overall accuracy of 90.1% seems impressive on paper, accuracy alone is misleading in imbalanced settings (a naive dummy classifier predicting all `no` would naturally achieve 88.3%).
+- **The Imbalance Caveat**: While an overall accuracy of 90.1% is high, accuracy alone is misleading in imbalanced settings (a naive dummy classifier predicting all `no` would naturally achieve 88.3%).
 - **Conservative Positive Predictions**: The model is selective when predicting "yes" — when it alerts that a client will subscribe, it is accurate **64%** of the time (precision). However, at the default 0.5 decision threshold, it only captures **35%** of actual subscribers (recall = 0.35), letting 689 potential depositors slip past undetected as false negatives.
 
 ---
